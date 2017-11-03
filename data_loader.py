@@ -8,11 +8,12 @@ class data_container():
         '''constructor'''
         #input data is a numpy array with 4 dimensions
         #(images(13,434), rows(94), columns(93), input image / segmentation label(2))
+        #Mean and Standard Deviation of pixel values of in put images
+        #Mean = 5.8991370727534225
+        #Standard Deviation = 21.539881799673775
         h5f = h5py.File('overlapping-chromosomes/LowRes_13434_overlapping_pairs.h5','r')
         self.data_ndarray = h5f['dataset_1'][:]
         h5f.close()
-        #perform a random shuffle of the entire dataset
-        np.random.shuffle(self.data_ndarray)
         #get a handle for tensor representation of data
         #tensor is of type "Long Tensor" by default
         #data_tensor and data_ndarray will point to the same data in memory
