@@ -76,7 +76,7 @@ class data_container():
         #shuffle the data that is going to be accessed, provided we are not in debug mode
         #Note: In debug mode, we would like to access a smaller subset of the data in the same order,
         #in order to compare performace of different networks / techniques
-        if(not(self.debug)):
+        if (not(self.debug)):
             self.shuffle_data()
         #setup the iterator variables
         #Note: value at the index self.iterator_max is not included for each class (train / val / test)
