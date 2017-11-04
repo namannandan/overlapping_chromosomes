@@ -4,7 +4,7 @@ import torch as t
 
 class data_container():
     '''a class that handles loading data, shuffling it and providing training, validation and test data'''
-    def __init__(self, train_data_percentage=70, batch_size=1):
+    def __init__(self, train_data_percentage=70, batch_size=1, debug=False):
         '''constructor'''
         #input data is a numpy array with 4 dimensions
         #(images(13,434), rows(94), columns(93), input image / segmentation label(2))
@@ -44,6 +44,8 @@ class data_container():
         #store the image width and height
         self.image_width = self.data_tensor.size()[3]
         self.image_height = self.data_tensor.size()[2]
+        #store debug state
+        self.debug = debug
 
     def set_mode(self, mode):
         '''function used to set the mode of the data container'''
@@ -71,8 +73,11 @@ class data_container():
 
     def __iter__(self):
         '''function to return the Iterable object'''
-        #shuffle the data that is going to be accessed
-        self.shuffle_data()
+        #shuffle the data that is going to be accessed, provided we are not in debug mode
+        #Note: In debug mode, we would like to access a smaller subset of the data in the same order,
+        #in order to compare performace of different networks / techniques
+        if(not(self.debug)):
+            self.shuffle_data()
         #setup the iterator variables
         #Note: value at the index self.iterator_max is not included for each class (train / val / test)
         if (self.mode == 'train'):
