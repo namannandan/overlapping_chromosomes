@@ -2,9 +2,11 @@ import torch as t
 from data_loader import data_container
 from matplotlib import pyplot as plt
 
+#debug flag
+debug = True
 #create a data container, with 70% (same as that used while training) as training data
 #batch size doesn't matter here, since we will only look at test data
-data = data_container(70, 1)
+data = data_container(70, 1, debug)
 #set the mode of the data container to 'test'
 data.set_mode('test')
 #load the saved network
@@ -39,8 +41,10 @@ for batch_id, (input_image, target_image) in enumerate(data):
     #extract the data contained in the Variable
     target_image = target_image.data
     #determine accuracy
+    #TODO : display accuracy on the graph
     accuracy = get_accuracy(output, target_image)
     print('Accuracy : ' + str(accuracy))
+    #TODO : add a title to the graph
     #plot input image
     input_image = (input_image.data).numpy()
     plt.subplot(131)
