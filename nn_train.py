@@ -10,41 +10,54 @@ import pickle
 from data_loader import data_container
 from nn_model import segnet_model1
 
+#seed
+t.manual_seed(1)
 #flag to indicate debug mode
 debug = True
 #number of training samples to use in debug mode
 #the same set of samples will be used repeatedly in each epoch
-debug_train_count = 50
+debug_train_count = 100
 #number of validation samples to use in debug mode
-debug_val_count = 5
+debug_val_count = 10
 
 #setup matplotlib
 #set interactive mode on
 plt.ion()
 plt.show()
 
+#neural network model
+net = segnet_model1()
+
 #hyper parameters
-#percentage of training data
+#percentage of data to be used as training data
 percent_training_data = 70
 #batch size
 batch_size = 16
 #learning rate
+#(0.5 works)
 eta = 0.5
 #number of epochs
-num_epochs = 100
+num_epochs = 60
+#TODO:choose correct optimizer
+#optimizer
+#working !
+#optimizer = optim.Adadelta(net.parameters(), lr=eta, rho=0.9, eps=1e-6, weight_decay=0.00001)
+#experiments !
+kwargs = {'weight_decay':0}
+optimizer = optim.Adadelta(net.parameters(), weight_decay=0.001)
+#optimizer = optim.SGD(net.parameters(), lr=0.1, momentum=0.9)
+
+#dataset
 #create a data container, with 70% as training data and batch_size=16
 data = data_container(percent_training_data, batch_size, debug)
-#neural network model
-net = segnet_model1()
-#optimizer
-optimizer = optim.Adadelta(net.parameters(), lr=eta, rho=0.9, eps=1e-6, weight_decay=0.00001)
 
 #dictionary to store the error values
 error_dict = {'train':[], 'val':[]}
 #padding required for the input and target images
 image_padding = t.nn.ZeroPad2d((1,2,1,1))
+#TODO:fix normalization
 #transform to Normalize the input data
-normalize = tv.transforms.Compose([tv.transforms.Normalize(5.9,21.54)])
+normalize = tv.transforms.Compose([tv.transforms.Normalize((5.9,),(21.54,))])
 
 for epoch in range (num_epochs):
     #set data container mode to train
@@ -53,9 +66,11 @@ for epoch in range (num_epochs):
     train_count = 0
     #iterate over the training samples
     for batch_id, (input_image_tensor, target_image_tensor) in enumerate(data):
-        #TODO : implement normalization of input images
+        #TODO:enable normalization
         #normalize the input images
-        #input_image_tensor = normalize(input_image_tensor)
+        # for i in range(input_image_tensor.size()[0]):
+        #     #normalize each of the input images in the batch
+        #     input_image_tensor[i] = normalize(input_image_tensor[i])
         #pad the input images and convert to Variable
         #spatial dimensions of the images before padding is (94x93)
         #spatial dimensions of the images after padding is (96x96)
@@ -110,20 +125,44 @@ for epoch in range (num_epochs):
     #update the weights
     optimizer.step()
 
+    #print the training and test error every 10 epochs
+    if (epoch % 10 == 0):
+        print ('Epoch: ', epoch)
+        print ('Training error: ', error_dict['train'][-1])
+        print ('Validation error: ', error_dict['val'][-1], '\n')
+
+
+    #TODO: check updation of learning rate
+    #update learning rate if required
+    # if (epoch > 0 and epoch%10==0):
+    #     avg_val_error = sum(error_dict['val'][-10:len(error_dict['val'])])/10
+    #     diff = abs(avg_val_error - error_dict['val'][-1])
+    #     if (diff < 0.01 and eta > 0.0001):
+    #         eta = eta*0.1
+    #         optimizer = optim.SGD(net.parameters(), lr=eta)
+
     #update the plot
     if (debug):
         #plot the error values
-        #TODO: add a title to the graph and also a legend for the two plots
-        plt.plot(error_dict['train'], 'xb-')
-        plt.plot(error_dict['val'], 'r-')
+        #Title of the plot
+        plt.title('Training and Validation error plots')
+        #axis labels
+        plt.xlabel('Number of Epochs')
+        plt.ylabel('Error')
+        #plot the training and validation errors
+        train_error_plot, = plt.plot(error_dict['train'], 'xb-')
+        val_error_plot, = plt.plot(error_dict['val'], 'r-')
+        #add legends for the plots
+        plt.legend([train_error_plot, val_error_plot], ["Training Error", "validation Error"])
         plt.pause(0.001)
 
 #save state only when not in debug mode
-if (not(debug)):
-    #save the error values
-    pickle.dump(error_dict, open('saved_errors.p', 'wb'))
-    #save the trained model
-    t.save(net, 'saved_model.pt')
+#TODO:fixme
+#if (not(debug)):
+#save the error values
+pickle.dump(error_dict, open('saved_errors.p', 'wb'))
+#save the trained model
+t.save(net, 'saved_model.pt')
 
 #if in debug mode, hold the plot open
 if (debug):

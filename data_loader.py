@@ -8,9 +8,9 @@ class data_container():
         '''constructor'''
         #input data is a numpy array with 4 dimensions
         #(images(13,434), rows(94), columns(93), input image / segmentation label(2))
-        #Mean and Standard Deviation of pixel values of in put images
-        #Mean = 5.8991370727534225
-        #Standard Deviation = 21.539881799673775
+        #Mean and Standard Deviation of pixel values of input images (measured for the first 70% of the data)
+        #Mean = 5.895719172653636
+        #Standard Deviation = 21.54536611616297
         h5f = h5py.File('overlapping-chromosomes/LowRes_13434_overlapping_pairs.h5','r')
         self.data_ndarray = h5f['dataset_1'][:]
         h5f.close()
