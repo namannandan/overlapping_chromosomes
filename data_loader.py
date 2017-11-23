@@ -11,6 +11,12 @@ class data_container():
         #Mean and Standard Deviation of pixel values of input images (measured for the first 70% of the data)
         #Mean = 5.895719172653636
         #Standard Deviation = 21.54536611616297
+        #segmentation labels are as follows :
+        # (0: background)
+        # (1: one of the chromosomes in the frame)
+        # (2: the other chromosome in the image)
+        # (3: overlapping region between the two chromosomes)
+        # (4: unknown region)
         h5f = h5py.File('overlapping-chromosomes/LowRes_13434_overlapping_pairs.h5','r')
         self.data_ndarray = h5f['dataset_1'][:]
         h5f.close()
