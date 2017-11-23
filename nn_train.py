@@ -35,16 +35,15 @@ percent_training_data = 70
 batch_size = 16
 #learning rate
 #(0.5 works)
-eta = 0.5
+eta = 0.3
 #number of epochs
-num_epochs = 60
+num_epochs = 100
 #TODO:choose correct optimizer
 #optimizer
 #working !
 #optimizer = optim.Adadelta(net.parameters(), lr=eta, rho=0.9, eps=1e-6, weight_decay=0.00001)
 #experiments !
-kwargs = {'weight_decay':0}
-optimizer = optim.Adadelta(net.parameters(), weight_decay=0.001)
+optimizer = optim.Adadelta(net.parameters(), lr=eta, weight_decay=0.0001)
 #optimizer = optim.SGD(net.parameters(), lr=0.1, momentum=0.9)
 
 #dataset
@@ -84,7 +83,7 @@ for epoch in range (num_epochs):
         #compute the error
         #convert type of "target_image_tensor" from FloatTensor to LongTensor,
         #since nll_loss expects the exptected target to be of type LongTensor having 3 dimensions
-        err = F.nll_loss(output, target_image_tensor.type(t.LongTensor)[:,0,:,:])
+        err = F.nll_loss(output, target_image_tensor.type(t.LongTensor)[:,0,:,:], weight=t.Tensor([1,1.5,1.5,2.0,2.0]))
         #backpropagate the error
         err.backward()
         #compute the summation of the error for the batch (average error for batch * batch size)
