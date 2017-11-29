@@ -4,7 +4,9 @@ import matplotlib.patches as mpatches
 import pickle
 
 y_val = []
-checkpoint_file = 'model_best.pth.tar'
+#class name of the model being used
+model_name = 'segnet_model1'
+checkpoint_file = model_name+'_model_best.pth.tar'
 checkpoint = t.load(checkpoint_file)
 errors = checkpoint['errors']
 
@@ -25,4 +27,4 @@ val_error, = plt.plot(x_val, y_val, '.r-')
 
 plt.legend([training_error, val_error], ["Training Error", "validation Error"])
 
-plt.savefig('train_val_error.jpg')
+plt.savefig(model_name+'_train_val_error.jpg')
