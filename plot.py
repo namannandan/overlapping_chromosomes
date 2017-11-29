@@ -1,10 +1,12 @@
+import torch as t
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
 import pickle
 
 y_val = []
-with open("saved_errors.p", 'rb') as fp:
-	errors = pickle.load(fp)
+checkpoint_file = 'model_best.pth.tar'
+checkpoint = t.load(checkpoint_file)
+errors = checkpoint['errors']
 
 y_val = errors['train']
 

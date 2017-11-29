@@ -1,6 +1,7 @@
 import torch as t
 import torchvision as tv
 from data_loader import data_container
+from nn_model import segnet_model1
 from matplotlib import pyplot as plt
 
 #debug flag
@@ -11,7 +12,10 @@ data = data_container(70, 1, debug)
 #set the mode of the data container to 'test'
 data.set_mode('val')
 #load the saved network
-net = t.load(open('saved_model.pt', 'rb'))
+checkpoint_file = 'model_best.pth.tar'
+net = segnet_model1()
+checkpoint = t.load(checkpoint_file)
+net.load_state_dict(checkpoint['model'])
 
 #padding required for the input images given to the network
 image_padding = t.nn.ZeroPad2d((1,2,1,1))

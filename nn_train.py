@@ -6,6 +6,7 @@ import torch.optim as optim
 from matplotlib import pyplot as plt
 import math
 import pickle
+import shutil
 
 from data_loader import data_container
 from nn_model import segnet_model1
@@ -13,28 +14,37 @@ from nn_model import segnet_model1
 #seed
 t.manual_seed(1)
 #flag to indicate debug mode
-debug = True
+debug = False
+#flag to resume training
+resume_training = False
+resume_checkpoint_file = 'checkpoint.pth.tar'
 #number of training samples to use in debug mode
 #the same set of samples will be used repeatedly in each epoch
 debug_train_count = 100
 #number of validation samples to use in debug mode
-debug_val_count = 10
+debug_val_count = 50
 
 #setup matplotlib
 #set interactive mode on
 plt.ion()
 plt.show()
 
+#load the saved state if resuming training
+if(resume_training):
+    checkpoint = t.load(resume_checkpoint_file)
+
 #neural network model
 net = segnet_model1()
+if(resume_training):
+    net.load_state_dict(checkpoint['model'])
 
 #hyper parameters
 #percentage of data to be used as training data
 percent_training_data = 70
 #batch size
-batch_size = 16
+batch_size = 64
 #learning rate
-#(0.5 works)
+#(0.5 works) (0.002 for adam)
 eta = 0.3
 #number of epochs
 num_epochs = 100
@@ -43,20 +53,40 @@ num_epochs = 100
 #working !
 #optimizer = optim.Adadelta(net.parameters(), lr=eta, rho=0.9, eps=1e-6, weight_decay=0.00001)
 #experiments !
-optimizer = optim.Adadelta(net.parameters(), lr=eta, weight_decay=0.0001)
+optimizer = optim.Adadelta(net.parameters(), lr=eta)
+#optimizer = optim.Adam(net.parameters(), lr=eta, weight_decay=0.00005)
+
 #optimizer = optim.SGD(net.parameters(), lr=0.1, momentum=0.9)
+#optimizer = optim.SGD(net.parameters(), lr=eta, momentum=0.3, weight_decay=0.1)
+if (resume_training):
+    optimizer.load_state_dict(checkpoint['optimizer'])
 
 #dataset
 #create a data container, with 70% as training data and batch_size=16
 data = data_container(percent_training_data, batch_size, debug)
 
 #dictionary to store the error values
-error_dict = {'train':[], 'val':[]}
+if (resume_training):
+    error_dict = checkpoint['errors']
+    #variable to track the best validation error
+    best_val_error = checkpoint['best_val_error']
+else:
+    error_dict = {'train':[], 'val':[]}
+    best_val_error = math.inf
+
+
 #padding required for the input and target images
 image_padding = t.nn.ZeroPad2d((1,2,1,1))
 #TODO:fix normalization
-#transform to Normalize the input data
-normalize = tv.transforms.Compose([tv.transforms.Normalize((5.9,),(21.54,))])
+#transform to Normalize the input data (subtract mean from each pixel)
+normalize = tv.transforms.Compose([tv.transforms.Normalize((5.9,),(1.0,))])
+
+#method to save checkpoints of the trained model and the optimizer state
+def save_checkpoint(state, is_best, filename='checkpoint.pth.tar'):
+    t.save(state, filename)
+    #update the best model obtained so far
+    if is_best:
+        shutil.copyfile(filename, 'model_best.pth.tar')
 
 for epoch in range (num_epochs):
     #set data container mode to train
@@ -83,7 +113,8 @@ for epoch in range (num_epochs):
         #compute the error
         #convert type of "target_image_tensor" from FloatTensor to LongTensor,
         #since nll_loss expects the exptected target to be of type LongTensor having 3 dimensions
-        err = F.nll_loss(output, target_image_tensor.type(t.LongTensor)[:,0,:,:], weight=t.Tensor([1,1.5,1.5,2.0,2.0]))
+        #weight=t.Tensor([0.5,1.5,1.5,2.0,2.0])
+        err = F.nll_loss(output, target_image_tensor.type(t.LongTensor)[:,0,:,:])
         #backpropagate the error
         err.backward()
         #compute the summation of the error for the batch (average error for batch * batch size)
@@ -124,6 +155,18 @@ for epoch in range (num_epochs):
     #update the weights
     optimizer.step()
 
+    #update best_val_error if required and save checkpoint
+    if(error_dict['val'][-1] < best_val_error):
+        is_best = True
+        best_val_error = error_dict['val'][-1]
+    else:
+        is_best = False
+    save_checkpoint({'epoch': epoch,
+                     'model': net.state_dict(),
+                     'optimizer': optimizer.state_dict(),
+                     'errors': error_dict,
+                     'best_val_error': best_val_error}, is_best)
+
     #print the training and test error every 10 epochs
     if (epoch % 10 == 0):
         print ('Epoch: ', epoch)
@@ -154,14 +197,6 @@ for epoch in range (num_epochs):
         #add legends for the plots
         plt.legend([train_error_plot, val_error_plot], ["Training Error", "validation Error"])
         plt.pause(0.001)
-
-#save state only when not in debug mode
-#TODO:fixme
-#if (not(debug)):
-#save the error values
-pickle.dump(error_dict, open('saved_errors.p', 'wb'))
-#save the trained model
-t.save(net, 'saved_model.pt')
 
 #if in debug mode, hold the plot open
 if (debug):
