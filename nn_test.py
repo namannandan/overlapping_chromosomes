@@ -1,26 +1,36 @@
 import torch as t
 import torchvision as tv
 from data_loader import data_container
-from nn_model import segnet_model1
+from nn_model import *
 from matplotlib import pyplot as plt
 
 #debug flag
-debug = True
+debug = False
 #create a data container, with 70% (same as that used while training) as training data
 #batch size doesn't matter here, since we will only look at test data
 data = data_container(70, 1, debug)
 #set the mode of the data container to 'test'
-data.set_mode('val')
+data.set_mode('test')
+#name of the model being used
+model_name = 'nn_model'
 #load the saved network
-checkpoint_file = 'model_best.pth.tar'
-net = segnet_model1()
+checkpoint_file = model_name+'_best.pth.tar'
+net = nn_model()
+#verify that we are using the correct model
+if (type(net).__name__ != model_name):
+    print("The intended neural net model is not being used")
+    exit()
+
+#load checkpoint
 checkpoint = t.load(checkpoint_file)
 net.load_state_dict(checkpoint['model'])
+#set the mode of the model to eval
+net.eval()
 
 #padding required for the input images given to the network
 image_padding = t.nn.ZeroPad2d((1,2,1,1))
 #transform to Normalize the input image
-normalize = tv.transforms.Compose([tv.transforms.Normalize((5.9,),(21.54,))])
+normalize = tv.transforms.Compose([tv.transforms.Normalize((5.9,),(1.0,))])
 
 #configure matplotlib
 #enable interactive mode
@@ -40,7 +50,7 @@ count = 0
 for batch_id, (input_image, target_image) in enumerate(data):
     #TODO:fix normalization
     #normalize the input image
-    #input_image[0] = normalize(input_image[0])
+    input_image[0] = normalize(input_image[0])
     #add padding to the input image
     input_image = image_padding(input_image)
     #get the output of the network
