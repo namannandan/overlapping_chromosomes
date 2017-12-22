@@ -5,8 +5,8 @@ import pickle
 
 y_val = []
 #class name of the model being used
-model_name = 'segnet_model6'
-checkpoint_file = model_name+'_model_best.pth.tar'
+model_name = 'nn_model'
+checkpoint_file = model_name+'_best.pth.tar'
 checkpoint = t.load(checkpoint_file)
 errors = checkpoint['errors']
 
